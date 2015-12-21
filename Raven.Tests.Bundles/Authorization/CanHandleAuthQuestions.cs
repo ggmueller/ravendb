@@ -520,6 +520,45 @@ namespace Raven.Tests.Bundles.Authorization
 		}
 
 		[Fact]
+		public void WhenGivingUserPermissionForTagStartingWithSameNameAndTaggingDocumentWillAllow ()
+		{
+			var company = new Company
+			              {
+					              Name = "Hibernating Rhinos"
+			              };
+			using (var s = store.OpenSession (DatabaseName))
+			{
+				s.Store (new client::Raven.Bundles.Authorization.Model.AuthorizationUser
+				         {
+						         Id = userId,
+						         Name = "Ayende Rahien",
+						         Permissions =
+						         {
+								         new client::Raven.Bundles.Authorization.Model.OperationPermission
+								         {
+										         Allow = true,
+										         Operation = operation,
+										         Tags = { "Companies/Imp" }
+								         }
+						         }
+				         });
+
+				s.Store (company);
+
+				client::Raven.Client.Authorization.AuthorizationClientExtensions.SetAuthorizationFor (s, company, new client::Raven.Bundles.Authorization.Model.DocumentAuthorization
+				                                                                                                  {
+						                                                                                                  Tags = { "Companies/Important" }
+				                                                                                                  });
+
+				s.SaveChanges ();
+			}
+
+			var jsonDocument = Database.Documents.Get (company.Id, null);
+			var isAllowed = authorizationDecisions.IsAllowed (userId, operation, company.Id, jsonDocument.Metadata, null);
+			Assert.False (isAllowed);
+		}
+
+		[Fact]
 		public void CanGiveUserExplicitPermissionOnDoc()
 		{
 			var company = new Company
