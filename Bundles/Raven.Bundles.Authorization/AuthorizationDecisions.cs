@@ -174,15 +174,23 @@ namespace Raven.Bundles.Authorization
 
 		private static bool OperationMatches(string op1, string op2)
 		{
-			return op2.StartsWith(op1, StringComparison.InvariantCultureIgnoreCase);
+		  return HierachialStartsWith (op2, op1);
 		}
 
 		private static bool TagsMatch(IEnumerable<string> permissionTags, IEnumerable<string> documentTags)
 		{
-			return permissionTags.All(p => documentTags.Any(d => d.StartsWith(p, StringComparison.InvariantCultureIgnoreCase)));
+			return permissionTags.All(p => documentTags.Any(d => HierachialStartsWith(d, p)));
 		}
 
-		private T GetDocumentAsEntity<T>(string documentId) where T : class
+	  private static bool HierachialStartsWith (string s, string segmentPrefix)
+	  {
+	    if (segmentPrefix.Length < s.Length && s[segmentPrefix.Length] != '/')
+	      return false;
+
+      return s.StartsWith(segmentPrefix, StringComparison.InvariantCultureIgnoreCase);
+    }
+
+	  private T GetDocumentAsEntity<T>(string documentId) where T : class
 		{
 			var document = database.Documents.Get(documentId, null);
 			if (document == null)
